@@ -1,17 +1,16 @@
-# Express Resource
+# Restify Resource
 
-  express-resource provides resourceful routing to express. For Express 2.x
-  use a version __below__ 1.0, for Express 3.x use 1.x.
+  restify-resource provides resourceful routing to restify (based on express-resource).
 
 ## Installation
 
 npm:
 
-    $ npm install express-resource
+    $ npm install restify-resource
 
 ## Usage
 
- To get started simply `require('express-resource')`, and this module will monkey-patch Express, enabling resourceful routing by providing the `app.resource()` method. A "resource" is simply an object, which defines one of more of the supported "actions" listed below:
+ To get started simply `require('restify-resource')`, and this module will monkey-patch Restify, enabling resourceful routing by providing the `app.resource()` method. A "resource" is simply an object, which defines one of more of the supported "actions" listed below:
 
     exports.index = function(req, res){
       res.send('forum index');
@@ -43,9 +42,9 @@ npm:
 
 The `app.resource()` method returns a new `Resource` object, which can be used to further map pathnames, nest resources, and more.
 
-    var express = require('express')
-      , Resource = require('express-resource')
-      , app = express.createServer();
+    var restify = require('restify')
+      , Resource = require('restify-resource')
+      , app = restify.createServer();
 
     app.resource('forums', require('./forum'));
 
@@ -114,7 +113,7 @@ Resources have the concept of "auto-loading" associated data. For example we can
 
 ## Content-Negotiation
 
-  Currently express-resource supports basic content-negotiation support utilizing extnames or "formats". This can currently be done two ways, first we may define actions as we normally would, and utilize the `req.format` property, and respond accordingly. The following would respond to `GET /pets.xml`, and `GET /pets.json`.
+  Currently restify-resource supports basic content-negotiation support utilizing extnames or "formats". This can currently be done two ways, first we may define actions as we normally would, and utilize the `req.format` property, and respond accordingly. The following would respond to `GET /pets.xml`, and `GET /pets.json`.
   
       var pets = ['tobi', 'jane', 'loki'];
 

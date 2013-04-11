@@ -1,10 +1,14 @@
 {
-  "name": "express-resource",
-  "description": "Resourceful routing for express",
+  "name": "restify-resource",
+  "description": "Resourceful routing for restify",
   "version": "1.0.0",
-  "homepage": "https://github.com/visionmedia/express-resource",
-  "author": "TJ Holowaychuk <tj@vision-media.ca>",
+  "homepage": "https://github.com/minmb/restify-resource",
+  "author": "Martin Häger <martin.hager@minmb.se>",
   "contributors": [
+    {
+      "name": "TJ Holowaychuk",
+      "email": "tj@vision-media.ca"
+    },
     {
       "name": "Daniel Gasienica",
       "email": "daniel@gasienica.ch"
@@ -17,7 +21,7 @@
   },
   "devDependencies": {
     "connect": "2.x",
-    "express": "3.x",
+    "restify": "3.x",
     "ejs": "0.4.x",
     "qs": "0.1.x",
     "mocha": "*",
@@ -25,7 +29,7 @@
     "supertest": "0.1.2"
   },
   "keywords": [
-    "express",
+    "restify",
     "rest",
     "resource"
   ],
