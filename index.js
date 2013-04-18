@@ -10,11 +10,11 @@
  * Module dependencies.
  */
 
-var express = require('express')
+var restify = require('restify')
   , methods = require('methods')
-  , debug = require('debug')('express-resource')
+  , debug = require('debug')('restify-resource')
   , lingo = require('lingo')
-  , app = express.application
+  , app = restify.server
   , en = lingo.en;
 
 /**
@@ -53,18 +53,17 @@ function Resource(name, actions, app) {
   actions = actions || {};
   this.base = actions.base || '/';
   if ('/' != this.base[this.base.length - 1]) this.base += '/';
-  this.format = actions.format;
   this.id = actions.id || this.defaultId;
   this.param = ':' + this.id;
+
+  // auto-loader
+  if (actions.load) this.load(actions.load);
 
   // default actions
   for (var i = 0, key; i < orderedActions.length; ++i) {
     key = orderedActions[i];
     if (actions[key]) this.mapDefaultAction(key, actions[key]);
   }
-
-  // auto-loader
-  if (actions.load) this.load(actions.load);
 };
 
 /**
@@ -80,7 +79,7 @@ Resource.prototype.load = function(fn){
     , id = this.id;
 
   this.loadFunction = fn;
-  this.app.param(this.id, function(req, res, next){
+  this.app.param(this.id, function(req, res, next, param){
     function callback(err, obj){
       if (err) return next(err);
       // TODO: ideally we should next() passed the
@@ -92,9 +91,9 @@ Resource.prototype.load = function(fn){
     
     // Maintain backward compatibility
     if (2 == fn.length) {
-      fn(req.params[id], callback);
+      fn(param, callback);
     } else {
-      fn(req, req.params[id], callback);
+      fn(req, param, callback);
     }
   });
 
@@ -139,7 +138,6 @@ Resource.prototype.map = function(method, path, fn){
   var route = this.base + (this.name || '');
   if (this.name && path) route += '/';
   route += path;
-  route += '.:format?';
 
   // register the route so we may later remove it
   (this.routes[method] = this.routes[method] || {})[route] = {
@@ -149,20 +147,7 @@ Resource.prototype.map = function(method, path, fn){
     , fn: fn
   };
 
-  // apply the route
-  this.app[method](route, function(req, res, next){
-    req.format = req.params.format || req.format || self.format;
-    if (req.format) res.type(req.format);
-    if ('object' == typeof fn) {
-      if (fn[req.format]) {
-        fn[req.format](req, res, next);
-      } else {
-        res.format(fn);
-      }
-    } else {
-      fn(req, res, next);
-    }
-  });
+  this.app[method](route, fn);
 
   return this;
 };
@@ -193,7 +178,7 @@ Resource.prototype.add = function(resource){
       route = routes[key];
       delete routes[key];
       if (method == 'del') method = 'delete';
-      app.routes[method].forEach(function(route, i){
+      (app.routes[method] || []).forEach(function(route, i){
         if (route.path == key) {
           app.routes[method].splice(i, 1);
         }
@@ -261,7 +246,7 @@ methods.concat(['del', 'all']).forEach(function(method){
  * @api public
  */
 
-app.resource = function(name, actions, opts){
+app.prototype.resource = function(name, actions, opts){
   var options = actions || {};
   if ('object' == typeof name) actions = name, name = null;
   if (options.id) actions.id = options.id;

@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "connect": "2.x",
-    "restify": "3.x",
+    "restify": "http://github.com/minmb/node-restify/archive/master.tar.gz",
     "ejs": "0.4.x",
     "qs": "0.1.x",
     "mocha": "*",

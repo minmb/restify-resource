@@ -1,22 +1,42 @@
 
 var assert = require('assert')
-  , express = require('express')
+  , restify = require('restify')
   , Resource = require('..')
   , request = require('supertest')
   , batch = require('./support/batch');
 
 describe('app.resource(name)', function(){
   it('should return a pre-defined resource', function(){
-    var app = express();
+    var app = restify.createServer();
     app.resource('users', { index: function(){} });
     app.resource('users').should.be.an.instanceof(Resource);
     app.resource('foo').should.be.an.instanceof(Resource);
   })
 })
 
+describe('app.VERB()', function(){
+  it('should map additional routes', function(done){
+    var app = restify.createServer();
+
+    app.use(restify.bodyParser());
+
+    var pets = app.resource('pets');
+    var toys = app.resource('toys');
+    var values = ['balls', 'platforms', 'tunnels'];
+
+    toys.get('/types', function(req, res){
+      res.send(values);
+    });
+
+    request(app)
+    .get('/toys/types')
+    .expect('["balls","platforms","tunnels"]', done);
+  })
+})
+
 describe('app.resource()', function(){
   it('should map CRUD actions', function(done){
-    var app = express();
+    var app = restify.createServer();
     var next = batch(done);
 
     var ret = app.resource('forums', require('./fixtures/forum'));
@@ -24,31 +44,31 @@ describe('app.resource()', function(){
 
     request(app)
     .get('/forums')
-    .expect('forum index', next());
+    .expect('"forum index"', next());
 
     request(app)
     .get('/forums/new')
-    .expect('new forum', next());
+    .expect('"new forum"', next());
 
     request(app)
     .post('/forums')
-    .expect('create forum', next());
+    .expect('"create forum"', next());
     
     request(app)
     .get('/forums/5')
-    .expect('show forum 5', next());
+    .expect('"show forum 5"', next());
     
     request(app)
     .get('/forums/5/edit')
-    .expect('edit forum 5', next());
+    .expect('"edit forum 5"', next());
     
     request(app)
     .del('/forums/5')
-    .expect('destroy forum 5', next());
+    .expect('"destroy forum 5"', next());
   })
 
   it('should support root resources', function(done){
-     var app = express();
+     var app = restify.createServer();
      var next = batch(done);
      var forum = app.resource(require('./fixtures/forum'));
      var thread = app.resource('threads', require('./fixtures/thread'));
@@ -56,7 +76,7 @@ describe('app.resource()', function(){
   
      request(app)
      .get('/')
-     .expect('forum index', next());
+     .expect('"forum index"', next());
   
      // request(app)
      // .get('/12')
@@ -73,7 +93,7 @@ describe('app.resource()', function(){
   
    describe('"id" option', function(){
      it('should allow overriding the default', function(done){
-       var app = express();
+       var app = restify.createServer();
        var next = batch(done);
      
        app.resource('users', {
@@ -89,28 +109,28 @@ describe('app.resource()', function(){
   
        request(app)
        .get('/users/10')
-       .expect('10', next());
+       .expect('"10"', next());
      })
    })
   
    describe('with several segments', function(){
      it('should work', function(done){
-       var app = express();
+       var app = restify.createServer();
        var next = batch(done);
        var cat = app.resource('api/cat', require('./fixtures/cat'));
   
        request(app)
        .get('/api/cat')
-       .expect('list of cats', next());
+       .expect('"list of cats"', next());
   
        request(app)
        .get('/api/cat/new')
-       .expect('new cat', next());
+       .expect('"new cat"', next());
      })
    })
   
    it('should allow configuring routes', function(done){
-     var app = express();
+     var app = restify.createServer();
      var next = batch(done);
      var Forum = require('./fixtures/forum').Forum;
      
@@ -141,7 +161,7 @@ describe('app.resource()', function(){
    describe('autoloading', function(){
      describe('when no resource is found', function(){
        it('should not invoke the callback', function(done){
-          var app = express();
+          var app = restify.createServer();
        
           function load(id, fn) { fn(); }
           var actions = { show: function(){
@@ -158,15 +178,14 @@ describe('app.resource()', function(){
   
      describe('when a resource is found', function(){
        it('should invoke the callback', function(done){
-         var app = express();
+         var app = restify.createServer();
          var Forum = require('./fixtures/forum').Forum;
        
          var actions = { show: function(req, res){
            res.end(req.forum.title);
          }};
        
-         var forum = app.resource('forum', actions);
-         forum.load(Forum.get);
+         var forum = app.resource('forum', actions, { load: Forum.get });
   
          request(app)
          .get('/forum/12')
@@ -174,7 +193,7 @@ describe('app.resource()', function(){
        })
   
        it('should work recursively', function(done){
-         var app = express();
+         var app = restify.createServer();
          var Forum = require('./fixtures/forum').Forum;
          var Thread = require('./fixtures/thread').Thread;
        
@@ -193,4 +212,18 @@ describe('app.resource()', function(){
        })
      })
    })
+})
+
+describe('Resource#add(resource)', function(){
+  it('should support nested resources', function(done){
+    var app = restify.createServer();
+
+    var users = app.resource('users');
+    var pets = app.resource('pets', require('./fixtures/pets'));
+    users.add(pets);
+
+    request(app)
+    .get('/users/1/pets')
+    .expect('["tobi","jane","loki"]', done);
+  })
 })
